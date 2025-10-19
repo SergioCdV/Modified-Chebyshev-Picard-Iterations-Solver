@@ -23,11 +23,11 @@ classdef MCPI
 
     methods 
         % Class constructor
-        function [obj] = MPCI(order, tol)
+        function [obj] = MCPI(order, tol)
             % Set basic properties 
             obj.N = order + 1; 
 
-            if ( exists('tol', 'var') )
+            if ( ~exist('tol', 'var') )
                 tol = 2.25E-14;
             end
 
@@ -40,27 +40,26 @@ classdef MCPI
         % Pre-allocation of matrices
         function [obj] = Init(obj)
             % Constants
-            N = obj.N;                              % Number of coefficients in the polynomial expansion
-            order = N - 1;                          % Order of the approximation
-            Ones = diag(ones(1,N));
+            order = obj.N - 1;                          % Order of the approximation
+            Ones = diag(ones(1,obj.N));
 
             % Weight matrix for the state vector
             W = Ones;                    
             W(1,1) = 1/2;                           
 
             % Approximation weights for the dynamics
-            V = (2 / N) * Ones;              
-            V(1,1) = 1/N;                           
-            V(N,N) = V(1,1);                           
+            V = (2 / obj.N) * Ones;              
+            V(1,1) = 1/obj.N;                           
+            V(obj.N,obj.N) = V(1,1);                           
         
-            R = (1/2) ./ ( 1:N-1 );                 % Approximation weights for the dynamics
+            R = (1/2) ./ ( 1:obj.N-1 );             % Approximation weights for the dynamics
             R = diag([1 R]);                        % Approximation weights for the dynamics
 
             % Chebyshev polynomials difference
-            S = zeros(N);
+            S = zeros(obj.N);
             S(1,1) = 1; 
             S(1,2) = -1/2;
-            S(1,N) = (-1)^(order+1)/(order-1);
+            S(1,obj.N) = (-1)^(order+1)/(order-1);
 
             for i = 2:order
                 S(1,i+1) = (-1)^(i+1) * 2 / (i^2 - 1);
@@ -69,11 +68,11 @@ classdef MCPI
             end
             S(order,end-2) = +1;
             S(order,end)   = -1;
-            S(N, end-1)    = +1;
+            S(obj.N, end-1)    = +1;
 
             % Chebyshev coefficients and polynomial matrix
-            obj.tau = obj.ClenshawCurtisNodes( obj.N );
-            T = ChebyshevPolynomial(obj.N, obj.tau);
+            obj.tau = obj.ClenshawCurtisNodes( order );
+            T = obj.ChebyshevPolynomial(order, obj.tau);
 
             % Final matrices
             obj.Ca = R * S * (T * V);                   % Dynamics approximation matrix
@@ -90,7 +89,7 @@ classdef MCPI
         
         function [Pn] = ChebyshevPolynomial(order, u)
             % Preallocation of the polynomials 
-            Pn = zeros(order+1, length(u)); 
+            Pn = zeros(order, length(u)); 
             Pn(1,:) = ones(1, length(u));    % Initialization of the Chebyshev polynomials of the first kind
             Pn(2,:) = u;                     % Initialization of the Chebyshev polynomials of the first kind
     
